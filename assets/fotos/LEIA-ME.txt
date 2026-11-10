@@ -1,0 +1,1 @@
+Coloque suas fotos nesta pasta e configure os caminhos em ../js/config.js.
