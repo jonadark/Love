@@ -2,7 +2,7 @@
     const projectConfig = window.loveProjectConfig;
     const defaultLetter = 'Dois meses podem parecer pouco no calendário, mas para mim já cabem tantas coisas bonitas.\n\nObrigado por cada conversa, cada abraço e por fazer os dias comuns terem um motivo a mais para sorrir. Gosto de descobrir o seu mundo e de imaginar tudo o que ainda vamos viver juntos.\n\nFeliz nosso segundo mês. Que venham muitos outros, sempre com esse jeitinho tão nosso.';
     const defaultState = {
-      nameOne: '', nameTwo: '', startDate: '', caption: '',
+      nameOne: 'Jonathan', nameTwo: 'Rebeca', startDate: '', caption: '',
       intro: '', letter: defaultLetter,
       riddleQuestion: projectConfig.riddle.question,
       riddleHint: projectConfig.riddle.hint,
@@ -111,25 +111,37 @@
       document.getElementById('letterTitle').textContent = state.nameTwo ? `Para você, ${state.nameTwo}.` : 'Para você, meu amor.';
       document.getElementById('letterText').textContent = state.letter || defaultLetter;
       document.getElementById('letterSignoff').textContent = state.nameOne ? `com todo meu carinho, ${state.nameOne} ♥` : 'com todo meu carinho ♥';
-      document.getElementById('riddleQuestion').textContent = state.riddleQuestion;
-      document.getElementById('riddleHint').textContent = state.riddleHint;
-      document.getElementById('hintButton').hidden = !state.riddleHint;
-      document.getElementById('riddleReward').textContent = state.riddleReward;
-      document.getElementById('riddleReward').hidden = !riddleSolved;
+      const riddleQuestion = document.getElementById('riddleQuestion');
+      const riddleHint = document.getElementById('riddleHint');
+      const hintButton = document.getElementById('hintButton');
+      const riddleReward = document.getElementById('riddleReward');
+      if (riddleQuestion) riddleQuestion.textContent = state.riddleQuestion;
+      if (riddleHint) riddleHint.textContent = state.riddleHint;
+      if (hintButton) hintButton.hidden = !state.riddleHint;
+      if (riddleReward) {
+        riddleReward.textContent = state.riddleReward;
+        riddleReward.hidden = !riddleSolved;
+      }
     }
 
     function resetRiddle() {
       riddleSolved = false;
-      document.getElementById('riddleForm').reset();
+      const riddleForm = document.getElementById('riddleForm');
       const feedback = document.getElementById('riddleFeedback');
-      feedback.textContent = '';
-      feedback.className = 'riddle-feedback';
-      document.getElementById('riddleHint').hidden = true;
-      document.getElementById('riddleReward').hidden = true;
+      const riddleHint = document.getElementById('riddleHint');
+      const riddleReward = document.getElementById('riddleReward');
+      if (riddleForm) riddleForm.reset();
+      if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'riddle-feedback';
+      }
+      if (riddleHint) riddleHint.hidden = true;
+      if (riddleReward) riddleReward.hidden = true;
     }
 
     function renderQuestions() {
       const grid = document.getElementById('questionGrid');
+      if (!grid) return;
       grid.replaceChildren();
       for (const question of projectConfig.form.questions) {
         const label = document.createElement('label');
@@ -146,15 +158,21 @@
     }
 
     function createMineBoard() {
+      const board = document.getElementById('minesBoard');
+      if (!board) return;
       mineBoard = Array.from({ length: mineRows }, () =>
         Array.from({ length: mineColumns }, () => ({ mine: false, open: false, flagged: false, count: 0 }))
       );
       firstMineClick = true;
       gameOver = false;
       flagMode = false;
-      document.getElementById('flagMode').setAttribute('aria-pressed', 'false');
-      document.getElementById('flagMode').textContent = 'Marcar bandeiras: desligado';
-      document.getElementById('minesStatus').textContent = 'Boa sorte, meu amor! ♥';
+      const flagModeButton = document.getElementById('flagMode');
+      if (flagModeButton) {
+        flagModeButton.setAttribute('aria-pressed', 'false');
+        flagModeButton.textContent = 'Marcar bandeiras: desligado';
+      }
+      const minesStatus = document.getElementById('minesStatus');
+      if (minesStatus) minesStatus.textContent = 'Boa sorte, meu amor! ♥';
       renderMineBoard();
     }
 
@@ -185,8 +203,10 @@
 
     function renderMineBoard() {
       const board = document.getElementById('minesBoard');
+      if (!board) return;
       const flags = mineBoard.flat().filter((cell) => cell.flagged).length;
-      document.getElementById('minesCounter').textContent = `Minas restantes: ${mineTotal - flags}`;
+      const minesCounter = document.getElementById('minesCounter');
+      if (minesCounter) minesCounter.textContent = `Minas restantes: ${mineTotal - flags}`;
       board.replaceChildren();
       mineBoard.forEach((row, rowIndex) => {
         row.forEach((cell, columnIndex) => {
@@ -280,7 +300,8 @@
       const form = document.getElementById('editForm');
       for (const [key, value] of Object.entries(state)) {
         if (key === 'photos') continue;
-        form.elements.namedItem(key).value = value;
+        const element = form.elements.namedItem(key);
+        if (element) element.value = value;
       }
       document.getElementById('editDialog').showModal();
     }
@@ -311,84 +332,106 @@
       }
     });
 
-    document.getElementById('hintButton').addEventListener('click', () => {
-      document.getElementById('riddleHint').hidden = false;
-    });
+    const hintButton = document.getElementById('hintButton');
+    if (hintButton) {
+      hintButton.addEventListener('click', () => {
+        const riddleHint = document.getElementById('riddleHint');
+        if (riddleHint) riddleHint.hidden = false;
+      });
+    }
 
-    document.getElementById('riddleForm').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const answer = document.getElementById('riddleAnswer').value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLocaleLowerCase('pt-BR');
-      const expected = state.riddleAnswer
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLocaleLowerCase('pt-BR');
-      const feedback = document.getElementById('riddleFeedback');
-      riddleSolved = Boolean(expected) && answer === expected;
-      feedback.textContent = riddleSolved ? 'Você acertou! ♥' : 'Ainda não... tente mais uma vez.';
-      feedback.className = `riddle-feedback ${riddleSolved ? 'is-correct' : 'is-incorrect'}`;
-      document.getElementById('riddleReward').hidden = !riddleSolved;
-    });
+    const riddleForm = document.getElementById('riddleForm');
+    if (riddleForm) {
+      riddleForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const answer = document.getElementById('riddleAnswer').value
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .toLocaleLowerCase('pt-BR');
+        const expected = state.riddleAnswer
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .toLocaleLowerCase('pt-BR');
+        const feedback = document.getElementById('riddleFeedback');
+        riddleSolved = Boolean(expected) && answer === expected;
+        if (feedback) {
+          feedback.textContent = riddleSolved ? 'Você acertou! ♥' : 'Ainda não... tente mais uma vez.';
+          feedback.className = `riddle-feedback ${riddleSolved ? 'is-correct' : 'is-incorrect'}`;
+        }
+        const riddleReward = document.getElementById('riddleReward');
+        if (riddleReward) riddleReward.hidden = !riddleSolved;
+      });
+    }
 
-    document.getElementById('questionsForm').addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const feedback = document.getElementById('formFeedback');
-      const submitButton = event.currentTarget.querySelector('button[type="submit"]');
-      const values = new FormData(event.currentTarget);
-      const answers = projectConfig.form.questions.map((question) => ({
-        question: question.label,
-        answer: values.get(question.id)?.toString().trim() || ''
-      }));
-      submitButton.disabled = true;
-      feedback.textContent = 'Enviando suas respostas...';
-      try {
-        const response = await fetch('/api/responses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answers })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Não foi possível enviar suas respostas.');
-        feedback.textContent = 'Respostas enviadas com carinho. Obrigado! ♥';
-        event.currentTarget.reset();
-      } catch (error) {
-        feedback.textContent = error instanceof TypeError
-          ? 'Não consegui conectar ao servidor. Inicie o projeto com npm start e tente novamente.'
-          : error.message;
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
+    const questionsForm = document.getElementById('questionsForm');
+    if (questionsForm) {
+      questionsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const feedback = document.getElementById('formFeedback');
+        const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+        const values = new FormData(event.currentTarget);
+        const answers = projectConfig.form.questions.map((question) => ({
+          question: question.label,
+          answer: values.get(question.id)?.toString().trim() || ''
+        }));
+        submitButton.disabled = true;
+        if (feedback) feedback.textContent = 'Enviando suas respostas...';
+        try {
+          const response = await fetch('/api/responses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Não foi possível enviar suas respostas.');
+          if (feedback) feedback.textContent = 'Respostas enviadas com carinho. Obrigado! ♥';
+          event.currentTarget.reset();
+        } catch (error) {
+          if (feedback) {
+            feedback.textContent = error instanceof TypeError
+              ? 'Não consegui conectar ao servidor. Inicie o projeto com npm start e tente novamente.'
+              : error.message;
+          }
+        } finally {
+          if (submitButton) submitButton.disabled = false;
+        }
+      });
+    }
 
-    document.getElementById('minesBoard').addEventListener('click', (event) => {
-      const button = event.target.closest('[data-row][data-column]');
-      if (!button) return;
-      const row = Number(button.dataset.row);
-      const column = Number(button.dataset.column);
-      if (flagMode) toggleMineFlag(row, column);
-      else openMineCell(row, column);
-    });
+    const minesBoard = document.getElementById('minesBoard');
+    if (minesBoard) {
+      minesBoard.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-row][data-column]');
+        if (!button) return;
+        const row = Number(button.dataset.row);
+        const column = Number(button.dataset.column);
+        if (flagMode) toggleMineFlag(row, column);
+        else openMineCell(row, column);
+      });
 
-    document.getElementById('minesBoard').addEventListener('contextmenu', (event) => {
-      const button = event.target.closest('[data-row][data-column]');
-      if (!button) return;
-      event.preventDefault();
-      toggleMineFlag(Number(button.dataset.row), Number(button.dataset.column));
-    });
+      minesBoard.addEventListener('contextmenu', (event) => {
+        const button = event.target.closest('[data-row][data-column]');
+        if (!button) return;
+        event.preventDefault();
+        toggleMineFlag(Number(button.dataset.row), Number(button.dataset.column));
+      });
+    }
 
-    document.getElementById('flagMode').addEventListener('click', (event) => {
-      flagMode = !flagMode;
-      event.currentTarget.setAttribute('aria-pressed', String(flagMode));
-      event.currentTarget.textContent = `Marcar bandeiras: ${flagMode ? 'ligado' : 'desligado'}`;
-    });
+    const flagModeButton = document.getElementById('flagMode');
+    if (flagModeButton) {
+      flagModeButton.addEventListener('click', (event) => {
+        flagMode = !flagMode;
+        event.currentTarget.setAttribute('aria-pressed', String(flagMode));
+        event.currentTarget.textContent = `Marcar bandeiras: ${flagMode ? 'ligado' : 'desligado'}`;
+      });
+    }
 
-    document.getElementById('resetMines').addEventListener('click', createMineBoard);
+    const resetMinesButton = document.getElementById('resetMines');
+    if (resetMinesButton) resetMinesButton.addEventListener('click', createMineBoard);
 
     document.getElementById('memoryGrid').addEventListener('click', (event) => {
       const removeButton = event.target.closest('[data-remove-photo]');
